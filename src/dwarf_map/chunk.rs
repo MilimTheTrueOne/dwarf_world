@@ -15,7 +15,7 @@ pub struct ChunkData {
 }
 
 impl ChunkData {
-    pub fn random(pos: IVec3) -> Self {
+    pub fn random() -> Self {
         Self {
             tiles: rand::random(),
         }

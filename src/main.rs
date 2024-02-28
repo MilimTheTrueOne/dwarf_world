@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, window::PresentMode};
 use smooth_bevy_cameras::{
     controllers::fps::{FpsCameraBundle, FpsCameraController, FpsCameraPlugin},
     LookTransformPlugin,
@@ -18,7 +18,17 @@ fn main() {
     };
 
     app.insert_resource(Msaa::Sample4)
-        .add_plugins(DefaultPlugins)
+        .add_plugins(DefaultPlugins.set(WindowPlugin {
+            primary_window: Some(Window {
+                title: "Bevy Dwarf Fortress like 3D".into(),
+                name: Some("bevy.app".into()),
+                resolution: (500., 300.).into(),
+                present_mode: PresentMode::Immediate,
+
+                ..default()
+            }),
+            ..default()
+        }))
         .add_plugins(LookTransformPlugin)
         .add_plugins(FpsCameraPlugin::default())
         .add_plugins(dwarf_map::DwarfMapPlugin)
