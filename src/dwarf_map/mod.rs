@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
 use self::chunk::{ChunkBundle, ChunkData};
 
@@ -13,7 +14,7 @@ impl Plugin for DwarfMapPlugin {
             .add_plugins(visibility::LayerVisibilityPlugin)
             .add_plugins(chunk::ChunkRenderPlugin)
             .add_systems(Startup, spawn_chunk)
-            .add_systems(Update, edit);
+            .add_plugins(ResourceInspectorPlugin::<CurrentMapLayer>::default());
     }
 }
 
@@ -24,13 +25,7 @@ pub fn spawn_chunk(mut commands: Commands) {
     });
 }
 
-pub fn edit(mut chunks: Query<&mut ChunkData>) {
-    for mut chunk in &mut chunks {
-        *chunk = ChunkData::random();
-    }
-}
-
-#[derive(Debug, Resource, Deref)]
+#[derive(Debug, Resource, Reflect, Deref, DerefMut)]
 pub struct CurrentMapLayer(pub usize);
 
 impl Default for CurrentMapLayer {
