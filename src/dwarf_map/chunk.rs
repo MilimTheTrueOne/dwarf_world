@@ -22,13 +22,13 @@ impl Plugin for ChunkRenderPlugin {
 
 pub fn update_chunk_meshes(
     mut commands: Commands,
-    chunks: Query<(&ChunkData, &ChunkCord, Option<&ChunkLayers>), Changed<ChunkData>>,
+    chunks: Query<(Entity, &ChunkData, &ChunkCord, Option<&ChunkLayers>), Changed<ChunkData>>,
     mut mesh_assets: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     let material: Handle<StandardMaterial> = materials.add(Color::rgb(0.8, 0.7, 0.6));
 
-    for (chunk, cord, old_layers) in chunks.iter() {
+    for (c, chunk, cord, old_layers) in chunks.iter() {
         if let Some(layer) = old_layers {
             for entity in layer.layers {
                 commands.entity(entity).despawn_recursive();
@@ -90,6 +90,8 @@ pub fn update_chunk_meshes(
 
             current += 1;
         }
+
+        commands.entity(c).insert(layers);
     }
 }
 
