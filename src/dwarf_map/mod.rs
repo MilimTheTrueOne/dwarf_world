@@ -9,8 +9,7 @@ pub struct DwarfMapPlugin;
 
 impl Plugin for DwarfMapPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<Chunk>()
-            .init_resource::<CurrentMapLayer>()
+        app.init_resource::<CurrentMapLayer>()
             .add_plugins(visibility::LayerVisibilityPlugin)
             .add_plugins(chunk::ChunkRenderPlugin)
             .add_systems(Startup, spawn_chunk)
@@ -28,20 +27,6 @@ pub fn spawn_chunk(mut commands: Commands) {
 pub fn edit(mut chunks: Query<&mut ChunkData>) {
     for mut chunk in &mut chunks {
         *chunk = ChunkData::random();
-    }
-}
-
-#[derive(Debug, Resource)]
-pub struct Chunk {
-    pub tiles: [[[bool; 16]; 16]; 16],
-}
-
-impl Default for Chunk {
-    fn default() -> Self {
-        Chunk {
-            tiles: rand::random(),
-            //tiles: [[[true; 16]; 16]; 16],
-        }
     }
 }
 
