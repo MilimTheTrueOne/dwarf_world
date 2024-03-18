@@ -17,14 +17,12 @@ fn main() {
         app.add_plugins(FrameTimeDiagnosticsPlugin);
     };
 
-    app.insert_resource(Msaa::Sample4)
+    app.insert_resource(Msaa::Off)
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 title: "Bevy Dwarf Fortress like 3D".into(),
                 name: Some("bevy.app".into()),
-                resolution: (500., 300.).into(),
                 present_mode: PresentMode::Immediate,
-
                 ..default()
             }),
             ..default()

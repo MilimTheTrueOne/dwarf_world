@@ -14,7 +14,7 @@ impl Plugin for LayerVisibilityPlugin {
 fn set_floor_visibility(
     mut commands: Commands,
     y: Res<CurrentMapLayer>,
-    walls: Query<(Entity, &WallMesh)>,
+    walls: Query<(Entity, &WallFloorMesh)>,
 ) {
     for (entity, wall) in &walls {
         if wall.0 > y.0 {

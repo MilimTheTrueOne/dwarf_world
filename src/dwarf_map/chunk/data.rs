@@ -112,7 +112,7 @@ pub const FRONT_NORMALS: [Vec3; 4] = [
 
 pub mod cube {
 
-    use crate::dwarf_map::temp_mesh::TempMesh;
+    use crate::dwarf_map::chunk::temp_mesh::TempMesh;
 
     use super::*;
 

@@ -1,8 +1,9 @@
-use crate::dwarf_map::temp_mesh::TempMesh;
+use super::temp_mesh::TempMesh;
 
 use super::*;
 
 const MAX: u32 = CHUNK_SIZE as u32 - 1;
+
 pub trait MeshLayer {
     fn get_tile(&self, pos: UVec2) -> &Tile;
 }
@@ -13,13 +14,21 @@ impl MeshLayer for [[Tile; CHUNK_SIZE]; CHUNK_SIZE] {
     }
 }
 
+pub struct EmptyLayer;
+
+impl MeshLayer for EmptyLayer {
+    fn get_tile(&self, _: UVec2) -> &Tile {
+        &false
+    }
+}
+
 /// turn any type that implements [`MeshLayer`] into a mesh, given the layer above and below it
 /// return the FloorWallMesh and the CeilingMesh
 pub fn generate_mesh(
     layer: &[[Tile; CHUNK_SIZE]; CHUNK_SIZE],
     above: &impl MeshLayer,
     below: &impl MeshLayer,
-) -> (TempMesh, TempMesh) {
+) -> (Mesh, Mesh) {
     let get_neighbors = |pos: UVec2| {
         let x = pos.x;
         let y = pos.y;
@@ -90,5 +99,5 @@ pub fn generate_mesh(
         }
     }
 
-    (floor_wall_mesh, ceiling_mesh)
+    (floor_wall_mesh.into_mesh(), ceiling_mesh.into_mesh())
 }
