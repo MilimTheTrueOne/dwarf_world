@@ -13,7 +13,6 @@ pub enum TileVisibility {
     #[default]
     Empty,
     Solid,
-    Transparent,
 }
 
 impl TileVisibility {
@@ -21,13 +20,8 @@ impl TileVisibility {
         match (self, rhs) {
             (Empty, Empty) => false,
             (Empty, Solid) => false,
-            (Empty, Transparent) => false,
             (Solid, Empty) => true,
             (Solid, Solid) => false,
-            (Solid, Transparent) => true,
-            (Transparent, Empty) => true,
-            (Transparent, Solid) => false,
-            (Transparent, Transparent) => false,
         }
     }
 }
@@ -53,6 +47,7 @@ pub fn generate_mesh(
     layer: &[[Tile; CHUNK_SIZE]; CHUNK_SIZE],
     above: &impl MeshLayer,
     below: &impl MeshLayer,
+    atlas: &Res<crate::dwarf_map::tile_atlas::TileAtlas>,
 ) -> (Mesh, Mesh) {
     let get_neighbors = |pos: UVec2| {
         let x = pos.x;
@@ -92,34 +87,36 @@ pub fn generate_mesh(
     for x in 0..(CHUNK_SIZE as u32) {
         for z in 0..(CHUNK_SIZE as u32) {
             let vis = layer[x as usize][z as usize].visibility;
+            let index = layer[x as usize][z as usize].index;
+
             let neighbors = get_neighbors(UVec2::new(x, z));
 
             let offset = Vec3::new(x as f32, 0.0, z as f32);
 
             if vis.visible(&neighbors[0]) {
-                data::cube::add_ceiling(&mut floor_wall_mesh, &offset)
+                data::cube::add_ceiling(&mut floor_wall_mesh, &offset, atlas.get_uvs(index))
             } else if vis.visible(&Empty) {
-                data::cube::add_ceiling(&mut ceiling_mesh, &offset)
+                data::cube::add_ceiling(&mut ceiling_mesh, &offset, atlas.get_uvs(index))
             }
 
             if vis.visible(&neighbors[1]) {
-                data::cube::add_bottom(&mut floor_wall_mesh, &offset)
+                data::cube::add_bottom(&mut floor_wall_mesh, &offset, atlas.get_uvs(index))
             }
 
             if vis.visible(&neighbors[2]) {
-                data::cube::add_right(&mut floor_wall_mesh, &offset);
+                data::cube::add_right(&mut floor_wall_mesh, &offset, atlas.get_uvs(index));
             }
 
             if vis.visible(&neighbors[3]) {
-                data::cube::add_left(&mut floor_wall_mesh, &offset);
+                data::cube::add_left(&mut floor_wall_mesh, &offset, atlas.get_uvs(index));
             }
 
             if vis.visible(&neighbors[4]) {
-                data::cube::add_front(&mut floor_wall_mesh, &offset);
+                data::cube::add_front(&mut floor_wall_mesh, &offset, atlas.get_uvs(index));
             }
 
             if vis.visible(&neighbors[5]) {
-                data::cube::add_back(&mut floor_wall_mesh, &offset);
+                data::cube::add_back(&mut floor_wall_mesh, &offset, atlas.get_uvs(index));
             }
         }
     }

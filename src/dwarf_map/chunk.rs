@@ -13,20 +13,21 @@ pub const CHUNK_SIZE: usize = 16;
 #[derive(Debug, Default, Clone, Copy, Reflect)]
 pub struct Tile {
     visibility: TileVisibility,
+    index: u32,
 }
 
 impl Distribution<Tile> for Standard {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Tile {
-        let visibility = match rng.gen_range(0..3) {
+        let visibility = match rng.gen_range(0..2) {
             0 => TileVisibility::Empty,
             1 => TileVisibility::Solid,
-            2 => TileVisibility::Transparent,
             _ => unreachable!(),
         };
-        Tile { visibility }
+        Tile {
+            visibility,
+            index: rng.gen_range(0..4),
+        }
     }
-
-    // other methods in Distribution are derived from `sample`
 }
 
 pub struct ChunkRenderPlugin;
@@ -43,8 +44,14 @@ pub fn update_chunk_meshes(
     chunks: Query<(Entity, &ChunkData, &ChunkCord, Option<&ChunkLayers>), Changed<ChunkData>>,
     mut mesh_assets: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    atlas: Res<super::tile_atlas::TileAtlas>,
 ) {
-    let material: Handle<StandardMaterial> = materials.add(Color::rgb(0.8, 0.7, 0.6));
+    let material: Handle<StandardMaterial> = materials.add(StandardMaterial {
+        base_color_texture: Some(atlas.get_handle()),
+        base_color: Color::WHITE,
+        alpha_mode: AlphaMode::Opaque,
+        ..default()
+    });
 
     for (c, chunk, cord, old_layers) in chunks.iter() {
         if let Some(layer) = old_layers {
@@ -59,16 +66,20 @@ pub fn update_chunk_meshes(
             &chunk.tiles[0],
             &chunk.tiles[1],
             &EmptyLayer,
+            &atlas,
         ));
 
         for layer in chunk.tiles.windows(3) {
-            meshes.push(meshing::generate_mesh(&layer[1], &layer[2], &layer[0]))
+            meshes.push(meshing::generate_mesh(
+                &layer[1], &layer[2], &layer[0], &atlas,
+            ))
         }
 
         meshes.push(meshing::generate_mesh(
             &chunk.tiles[CHUNK_SIZE - 1],
             &EmptyLayer,
             &chunk.tiles[CHUNK_SIZE - 2],
+            &atlas,
         ));
 
         let mut layers = ChunkLayers {

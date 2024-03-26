@@ -1,27 +1,5 @@
 use bevy::prelude::*;
 
-const THIRD: f32 = 1.0 / 3.0;
-const THIRD2: f32 = 2.0 / 3.0;
-
-pub const CEILING_UV: [Vec2; 4] = [
-    Vec2::new(0.0, 0.0),
-    Vec2::new(0.0, THIRD),
-    Vec2::new(1.0, 0.0),
-    Vec2::new(1.0, THIRD),
-];
-pub const WALL_UV: [Vec2; 4] = [
-    Vec2::new(0.0, THIRD),
-    Vec2::new(0.0, THIRD2),
-    Vec2::new(1.0, THIRD),
-    Vec2::new(1.0, THIRD2),
-];
-pub const FLOOR_UV: [Vec2; 4] = [
-    Vec2::new(0.0, THIRD2),
-    Vec2::new(0.0, 1.0),
-    Vec2::new(1.0, THIRD2),
-    Vec2::new(1.0, 1.0),
-];
-
 // vertices
 
 pub const CEILING_VERTICES: [Vec3; 4] = [
@@ -128,9 +106,9 @@ pub mod cube {
         ]
     }
 
-    pub fn add_ceiling(mesh: &mut TempMesh, offset: &Vec3) {
+    pub fn add_ceiling(mesh: &mut TempMesh, offset: &Vec3, uvs: [Vec2; 4]) {
         mesh.extend(
-            &CEILING_UV,
+            &uvs,
             &CEILING_NORMALS,
             &offset_vertices(&CEILING_VERTICES, offset),
             &INDICES,
@@ -138,54 +116,54 @@ pub mod cube {
     }
 
     #[allow(unused)]
-    pub fn add_floor(mesh: &mut TempMesh, offset: &Vec3) {
+    pub fn add_floor(mesh: &mut TempMesh, offset: &Vec3, uvs: [Vec2; 4]) {
         mesh.extend(
-            &FLOOR_UV,
+            &uvs,
             &FLOOR_NORMALS,
             &offset_vertices(&FLOOR_VERTICES, offset),
             &INDICES,
         );
     }
 
-    pub fn add_bottom(mesh: &mut TempMesh, offset: &Vec3) {
+    pub fn add_bottom(mesh: &mut TempMesh, offset: &Vec3, uvs: [Vec2; 4]) {
         mesh.extend(
-            &FLOOR_UV,
+            &uvs,
             &FLOOR_NORMALS,
             &offset_vertices(&FLOOR_VERTICES, offset),
             &REV_INDICES,
         );
     }
 
-    pub fn add_front(mesh: &mut TempMesh, offset: &Vec3) {
+    pub fn add_front(mesh: &mut TempMesh, offset: &Vec3, uvs: [Vec2; 4]) {
         mesh.extend(
-            &WALL_UV,
+            &uvs,
             &FRONT_NORMALS,
             &offset_vertices(&FRONT_VERTICES, offset),
             &REV_INDICES,
         );
     }
 
-    pub fn add_back(mesh: &mut TempMesh, offset: &Vec3) {
+    pub fn add_back(mesh: &mut TempMesh, offset: &Vec3, uvs: [Vec2; 4]) {
         mesh.extend(
-            &WALL_UV,
+            &uvs,
             &BACK_NORMALS,
             &offset_vertices(&BACK_VERTICES, offset),
             &INDICES,
         );
     }
 
-    pub fn add_right(mesh: &mut TempMesh, offset: &Vec3) {
+    pub fn add_right(mesh: &mut TempMesh, offset: &Vec3, uvs: [Vec2; 4]) {
         mesh.extend(
-            &WALL_UV,
+            &uvs,
             &RIGHT_NORMALS,
             &offset_vertices(&RIGHT_VERTICES, offset),
             &INDICES,
         );
     }
 
-    pub fn add_left(mesh: &mut TempMesh, offset: &Vec3) {
+    pub fn add_left(mesh: &mut TempMesh, offset: &Vec3, uvs: [Vec2; 4]) {
         mesh.extend(
-            &WALL_UV,
+            &uvs,
             &LEFT_NORMALS,
             &offset_vertices(&LEFT_VERTICES, offset),
             &REV_INDICES,
