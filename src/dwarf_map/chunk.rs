@@ -1,4 +1,5 @@
 use bevy::{ecs::system::SystemParam, prelude::*, utils::HashMap};
+use rand::{distributions::Standard, prelude::*};
 
 pub mod data;
 pub mod meshing;
@@ -9,7 +10,24 @@ use super::dwarf_map_flags;
 
 pub const CHUNK_SIZE: usize = 16;
 
-pub type Tile = bool;
+#[derive(Debug, Default, Clone, Copy, Reflect)]
+pub struct Tile {
+    visibility: TileVisibility,
+}
+
+impl Distribution<Tile> for Standard {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Tile {
+        let visibility = match rng.gen_range(0..3) {
+            0 => TileVisibility::Empty,
+            1 => TileVisibility::Solid,
+            2 => TileVisibility::Transparent,
+            _ => unreachable!(),
+        };
+        Tile { visibility }
+    }
+
+    // other methods in Distribution are derived from `sample`
+}
 
 pub struct ChunkRenderPlugin;
 
@@ -108,10 +126,10 @@ impl ChunkCache {
 
 #[derive(Component, Default, Debug, Clone)]
 pub struct ChunkData {
-    /// this might be better of being moved to another type?
     tiles: [[[Tile; CHUNK_SIZE]; CHUNK_SIZE]; CHUNK_SIZE],
 }
 
+#[allow(unused)]
 impl ChunkData {
     pub fn random() -> Self {
         Self {
@@ -156,6 +174,7 @@ pub struct ChunkBundle {
 #[derive(Debug, Component)]
 pub struct Layer;
 
+#[allow(unused)]
 impl ChunkBundle {
     pub fn new(chunk: ChunkData, transform: Transform) -> Self {
         Self {
@@ -166,6 +185,7 @@ impl ChunkBundle {
     }
 }
 
+#[allow(unused)]
 #[derive(SystemParam)]
 pub struct MapCommands<'w, 's> {
     commands: Commands<'w, 's>,
@@ -173,6 +193,7 @@ pub struct MapCommands<'w, 's> {
     chunks: Query<'w, 's, &'static ChunkData>,
 }
 
+#[allow(unused)]
 impl<'w, 's> MapCommands<'w, 's> {
     pub fn commands(&mut self) -> Commands {
         self.commands.reborrow()
@@ -194,6 +215,7 @@ impl<'w, 's> MapCommands<'w, 's> {
     }
 }
 
+#[allow(unused)]
 pub struct TileCommands<'w, 's, 'a> {
     tile: UVec3,
     local_tile: UVec3,

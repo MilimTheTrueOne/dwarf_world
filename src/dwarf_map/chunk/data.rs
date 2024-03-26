@@ -137,6 +137,7 @@ pub mod cube {
         );
     }
 
+    #[allow(unused)]
     pub fn add_floor(mesh: &mut TempMesh, offset: &Vec3) {
         mesh.extend(
             &FLOOR_UV,

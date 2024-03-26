@@ -5,20 +5,45 @@ use super::*;
 const MAX: u32 = CHUNK_SIZE as u32 - 1;
 
 pub trait MeshLayer {
-    fn get_tile(&self, pos: UVec2) -> &Tile;
+    fn get_tile(&self, pos: UVec2) -> TileVisibility;
 }
 
+#[derive(Debug, Clone, Copy, Default, Reflect)]
+pub enum TileVisibility {
+    #[default]
+    Empty,
+    Solid,
+    Transparent,
+}
+
+impl TileVisibility {
+    pub fn visible(&self, rhs: &Self) -> bool {
+        match (self, rhs) {
+            (Empty, Empty) => false,
+            (Empty, Solid) => false,
+            (Empty, Transparent) => false,
+            (Solid, Empty) => true,
+            (Solid, Solid) => false,
+            (Solid, Transparent) => true,
+            (Transparent, Empty) => true,
+            (Transparent, Solid) => false,
+            (Transparent, Transparent) => false,
+        }
+    }
+}
+use TileVisibility::*;
+
 impl MeshLayer for [[Tile; CHUNK_SIZE]; CHUNK_SIZE] {
-    fn get_tile(&self, pos: UVec2) -> &Tile {
-        &self[pos.x as usize][pos.y as usize]
+    fn get_tile(&self, pos: UVec2) -> TileVisibility {
+        self[pos.x as usize][pos.y as usize].visibility
     }
 }
 
 pub struct EmptyLayer;
 
 impl MeshLayer for EmptyLayer {
-    fn get_tile(&self, _: UVec2) -> &Tile {
-        &false
+    fn get_tile(&self, _: UVec2) -> TileVisibility {
+        TileVisibility::Empty
     }
 }
 
@@ -34,26 +59,26 @@ pub fn generate_mesh(
         let y = pos.y;
 
         let (left, right) = match x {
-            0 => (false, *layer.get_tile(UVec2::new(x + 1, y))),
-            MAX => (*layer.get_tile(UVec2::new(x - 1, y)), false),
+            0 => (Empty, layer.get_tile(UVec2::new(x + 1, y))),
+            MAX => (layer.get_tile(UVec2::new(x - 1, y)), Empty),
             _ => (
-                *layer.get_tile(UVec2::new(x - 1, y)),
-                *layer.get_tile(UVec2::new(x + 1, y)),
+                layer.get_tile(UVec2::new(x - 1, y)),
+                layer.get_tile(UVec2::new(x + 1, y)),
             ),
         };
 
         let (front, back) = match y {
-            0 => (false, *layer.get_tile(UVec2::new(x, y + 1))),
-            MAX => (*layer.get_tile(UVec2::new(x, y - 1)), false),
+            0 => (Empty, layer.get_tile(UVec2::new(x, y + 1))),
+            MAX => (layer.get_tile(UVec2::new(x, y - 1)), Empty),
             _ => (
-                *layer.get_tile(UVec2::new(x, y - 1)),
-                *layer.get_tile(UVec2::new(x, y + 1)),
+                layer.get_tile(UVec2::new(x, y - 1)),
+                layer.get_tile(UVec2::new(x, y + 1)),
             ),
         };
 
         [
-            *above.get_tile(pos),
-            *below.get_tile(pos),
+            above.get_tile(pos),
+            below.get_tile(pos),
             right,
             left,
             front,
@@ -66,35 +91,35 @@ pub fn generate_mesh(
 
     for x in 0..(CHUNK_SIZE as u32) {
         for z in 0..(CHUNK_SIZE as u32) {
-            let tile = layer[x as usize][z as usize];
+            let vis = layer[x as usize][z as usize].visibility;
             let neighbors = get_neighbors(UVec2::new(x, z));
 
             let offset = Vec3::new(x as f32, 0.0, z as f32);
 
-            if tile {
-                data::cube::add_ceiling(&mut ceiling_mesh, &offset);
+            if vis.visible(&neighbors[0]) {
+                data::cube::add_ceiling(&mut floor_wall_mesh, &offset)
+            } else if vis.visible(&Empty) {
+                data::cube::add_ceiling(&mut ceiling_mesh, &offset)
+            }
 
-                if !neighbors[1] {
-                    data::cube::add_bottom(&mut floor_wall_mesh, &offset);
-                }
+            if vis.visible(&neighbors[1]) {
+                data::cube::add_bottom(&mut floor_wall_mesh, &offset)
+            }
 
-                if !neighbors[2] {
-                    data::cube::add_right(&mut floor_wall_mesh, &offset);
-                }
+            if vis.visible(&neighbors[2]) {
+                data::cube::add_right(&mut floor_wall_mesh, &offset);
+            }
 
-                if !neighbors[3] {
-                    data::cube::add_left(&mut floor_wall_mesh, &offset);
-                }
+            if vis.visible(&neighbors[3]) {
+                data::cube::add_left(&mut floor_wall_mesh, &offset);
+            }
 
-                if !neighbors[4] {
-                    data::cube::add_front(&mut floor_wall_mesh, &offset)
-                }
+            if vis.visible(&neighbors[4]) {
+                data::cube::add_front(&mut floor_wall_mesh, &offset);
+            }
 
-                if !neighbors[5] {
-                    data::cube::add_back(&mut floor_wall_mesh, &offset)
-                }
-            } else if neighbors[1] {
-                data::cube::add_floor(&mut floor_wall_mesh, &offset)
+            if vis.visible(&neighbors[5]) {
+                data::cube::add_back(&mut floor_wall_mesh, &offset);
             }
         }
     }
