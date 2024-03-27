@@ -1,4 +1,5 @@
 use super::{dwarf_map_flags::*, CurrentMapLayer};
+use crate::prelude::*;
 use bevy::prelude::*;
 
 /// Plugin to handle the visibility of layer meshes.
@@ -7,7 +8,10 @@ pub struct LayerVisibilityPlugin;
 
 impl Plugin for LayerVisibilityPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (set_ceiling_visibility, set_floor_visibility));
+        app.add_systems(
+            Update,
+            (set_ceiling_visibility, set_floor_visibility).run_if(in_state(GameState::Playing)),
+        );
     }
 }
 

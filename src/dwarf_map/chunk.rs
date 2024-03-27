@@ -7,6 +7,7 @@ mod temp_mesh;
 pub use meshing::*;
 
 use super::dwarf_map_flags;
+use crate::prelude::*;
 
 pub const CHUNK_SIZE: usize = 16;
 
@@ -34,8 +35,10 @@ pub struct ChunkRenderPlugin;
 
 impl Plugin for ChunkRenderPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<ChunkCache>()
-            .add_systems(Update, update_chunk_meshes);
+        app.init_resource::<ChunkCache>().add_systems(
+            Update,
+            update_chunk_meshes.run_if(in_state(GameState::Playing)),
+        );
     }
 }
 

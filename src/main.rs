@@ -5,6 +5,11 @@ use smooth_bevy_cameras::{
 };
 
 mod dwarf_map;
+mod states;
+
+pub mod prelude {
+    pub use super::states::*;
+}
 
 fn main() {
     let mut app = App::new();
@@ -17,7 +22,8 @@ fn main() {
         app.add_plugins(FrameTimeDiagnosticsPlugin);
     };
 
-    app.insert_resource(Msaa::Off)
+    app.insert_resource(Msaa::Sample2)
+        .insert_state(states::GameState::Playing)
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 title: "Bevy Dwarf Fortress like 3D".into(),
