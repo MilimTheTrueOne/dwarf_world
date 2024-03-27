@@ -12,29 +12,25 @@ impl Plugin for LayerVisibilityPlugin {
 }
 
 fn set_floor_visibility(
-    mut commands: Commands,
     y: Res<CurrentMapLayer>,
-    walls: Query<(Entity, &WallFloorMesh)>,
+    mut walls: Query<(&WallFloorMesh, &mut Visibility)>,
 ) {
-    for (entity, wall) in &walls {
-        if wall.0 > y.0 {
-            commands.entity(entity).insert(Visibility::Hidden);
-        } else {
-            commands.entity(entity).insert(Visibility::Visible);
+    for (wall, mut vis) in walls.iter_mut() {
+        *vis = match wall.0 <= y.0 {
+            true => Visibility::Visible,
+            false => Visibility::Hidden,
         };
     }
 }
 
 fn set_ceiling_visibility(
-    mut commands: Commands,
     y: Res<CurrentMapLayer>,
-    ceilings: Query<(Entity, &CeilingMesh)>,
+    mut ceilings: Query<(&CeilingMesh, &mut Visibility)>,
 ) {
-    for (entity, ceiling) in &ceilings {
-        if ceiling.0 == y.0 {
-            commands.entity(entity).insert(Visibility::Visible);
-        } else {
-            commands.entity(entity).insert(Visibility::Hidden);
+    for (ceiling, mut vis) in ceilings.iter_mut() {
+        *vis = match ceiling.0 == y.0 {
+            true => Visibility::Visible,
+            false => Visibility::Hidden,
         };
     }
 }
