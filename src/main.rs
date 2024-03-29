@@ -1,9 +1,11 @@
 use bevy::{prelude::*, window::PresentMode};
+use prelude::LoadingState;
 use smooth_bevy_cameras::{
     controllers::fps::{FpsCameraBundle, FpsCameraController, FpsCameraPlugin},
     LookTransformPlugin,
 };
 
+mod assets;
 mod dwarf_map;
 mod states;
 
@@ -14,7 +16,7 @@ pub mod prelude {
 fn main() {
     let mut app = App::new();
 
-    #[cfg(debug_assertions)] // debug/dev builds only
+    #[cfg(debug_assertions)]
     {
         use bevy::diagnostic::LogDiagnosticsPlugin;
         app.add_plugins(LogDiagnosticsPlugin::default());
@@ -23,7 +25,8 @@ fn main() {
     };
 
     app.insert_resource(Msaa::Sample2)
-        .insert_state(states::GameState::Playing)
+        .insert_state(states::GameState::Loading)
+        .insert_state(LoadingState::LoadingAssets)
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
                 title: "Bevy Dwarf Fortress like 3D".into(),
@@ -35,7 +38,7 @@ fn main() {
         }))
         .add_plugins(LookTransformPlugin)
         .add_plugins(FpsCameraPlugin::default())
-        .add_plugins(dwarf_map::DwarfMapPlugin)
+        .add_plugins((dwarf_map::DwarfMapPlugin, assets::DwarfAssetPlugin))
         .add_systems(Startup, setup)
         .run();
 }

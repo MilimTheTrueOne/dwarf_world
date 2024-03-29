@@ -5,3 +5,10 @@ pub enum GameState {
     Loading,
     Playing,
 }
+
+#[derive(Debug, States, Hash, PartialEq, Eq, Clone, Copy)]
+pub enum LoadingState {
+    Done,
+    LoadingAssets,
+    BuildingAtlas,
+}

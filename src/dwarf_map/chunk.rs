@@ -14,7 +14,7 @@ pub const CHUNK_SIZE: usize = 16;
 #[derive(Debug, Default, Clone, Copy, Reflect)]
 pub struct Tile {
     visibility: TileVisibility,
-    index: u32,
+    index: usize,
 }
 
 impl Distribution<Tile> for Standard {
@@ -46,15 +46,9 @@ pub fn update_chunk_meshes(
     mut commands: Commands,
     chunks: Query<(Entity, &ChunkData, &ChunkCord, Option<&ChunkLayers>), Changed<ChunkData>>,
     mut mesh_assets: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
     atlas: Res<super::tile_atlas::TileAtlas>,
 ) {
-    let material: Handle<StandardMaterial> = materials.add(StandardMaterial {
-        base_color_texture: Some(atlas.get_handle()),
-        base_color: Color::WHITE,
-        alpha_mode: AlphaMode::Opaque,
-        ..default()
-    });
+    let material = atlas.material.clone();
 
     for (c, chunk, cord, old_layers) in chunks.iter() {
         if let Some(layer) = old_layers {

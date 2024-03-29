@@ -3,8 +3,8 @@ use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
 use self::chunk::{ChunkBundle, ChunkData};
 
-mod chunk;
-mod tile_atlas;
+pub mod chunk;
+pub mod tile_atlas;
 mod visibility;
 
 pub struct DwarfMapPlugin;
@@ -14,7 +14,7 @@ impl Plugin for DwarfMapPlugin {
         app.init_resource::<CurrentMapLayer>()
             .add_plugins(visibility::LayerVisibilityPlugin)
             .add_plugins(chunk::ChunkRenderPlugin)
-            .add_systems(Startup, (tile_atlas::init_atlas, spawn_chunk))
+            .add_systems(Startup, spawn_chunk)
             .add_plugins(ResourceInspectorPlugin::<CurrentMapLayer>::default());
     }
 }
