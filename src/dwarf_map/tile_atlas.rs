@@ -11,8 +11,8 @@ impl TileAtlas {
     pub fn get_uvs(&self, index: usize) -> [Vec2; 4] {
         let rect = self.layout.textures[index];
 
-        let min = rect.min + Vec2::splat(0.05);
-        let max = rect.max - Vec2::splat(0.05);
+        let min = rect.min;
+        let max = rect.max;
 
         [
             min / self.layout.size,

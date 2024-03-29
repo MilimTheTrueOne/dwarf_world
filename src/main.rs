@@ -1,4 +1,5 @@
 use bevy::{prelude::*, window::PresentMode};
+use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 use prelude::LoadingState;
 use smooth_bevy_cameras::{
     controllers::fps::{FpsCameraBundle, FpsCameraController, FpsCameraPlugin},
@@ -16,15 +17,7 @@ pub mod prelude {
 fn main() {
     let mut app = App::new();
 
-    #[cfg(debug_assertions)]
-    {
-        use bevy::diagnostic::LogDiagnosticsPlugin;
-        app.add_plugins(LogDiagnosticsPlugin::default());
-        use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
-        app.add_plugins(FrameTimeDiagnosticsPlugin);
-    };
-
-    app.insert_resource(Msaa::Sample2)
+    app.insert_resource(Msaa::Off)
         .insert_state(states::GameState::Loading)
         .insert_state(LoadingState::LoadingAssets)
         .add_plugins(DefaultPlugins.set(WindowPlugin {
@@ -39,8 +32,16 @@ fn main() {
         .add_plugins(LookTransformPlugin)
         .add_plugins(FpsCameraPlugin::default())
         .add_plugins((dwarf_map::DwarfMapPlugin, assets::DwarfAssetPlugin))
-        .add_systems(Startup, setup)
-        .run();
+        .add_systems(Startup, setup);
+    //#[cfg(debug_assertions)]
+    {
+        use bevy::diagnostic::LogDiagnosticsPlugin;
+        app.add_plugins(LogDiagnosticsPlugin::default());
+        use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
+        app.add_plugins(FrameTimeDiagnosticsPlugin);
+        app.add_plugins(ResourceInspectorPlugin::<Msaa>::new())
+    };
+    app.run();
 }
 
 fn setup(mut commands: Commands) {
