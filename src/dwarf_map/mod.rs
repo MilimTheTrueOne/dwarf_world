@@ -20,8 +20,8 @@ impl Plugin for DwarfMapPlugin {
 }
 
 pub fn spawn_chunk(mut commands: Commands, mut cache: ResMut<ChunkCache>) {
-    for x in 0..10 {
-        for y in 0..10 {
+    for x in 0..2 {
+        for y in 0..1 {
             for z in 0..1 {
                 let cord = ChunkCord(UVec3::new(x, y, z));
                 let e = commands

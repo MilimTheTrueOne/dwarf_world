@@ -171,31 +171,31 @@ impl ChunkData {
 
             let (left, right) = match x {
                 0 => (
-                    chunk_left.tiles[layer_index][y][MAX].visibility,
+                    chunk_left.tiles[layer_index][x][MAX].visibility,
                     layer[x + 1][y].visibility,
                 ),
                 MAX => (
                     layer[x - 1][y].visibility,
-                    chunk_right.tiles[layer_index][y][0].visibility,
+                    chunk_right.tiles[layer_index][x][0].visibility,
                 ),
                 _ => (layer[x - 1][y].visibility, layer[x + 1][y].visibility),
             };
 
             let (front, back) = match y {
                 0 => (
-                    chunk_front.tiles[layer_index][x][MAX].visibility,
+                    chunk_front.tiles[layer_index][MAX][y].visibility,
                     layer[x][y + 1].visibility,
                 ),
                 MAX => (
                     layer[x][y - 1].visibility,
-                    chunk_back.tiles[layer_index][x][0].visibility,
+                    chunk_back.tiles[layer_index][0][y].visibility,
                 ),
                 _ => (layer[x][y - 1].visibility, layer[x][y + 1].visibility),
             };
 
             let (above, below) = match layer_index {
                 0 => (self.tiles[layer_index + 1], chunk_bottom.tiles[MAX]),
-                MAX => (self.tiles[layer_index - 1], chunk_top.tiles[0]),
+                MAX => (chunk_top.tiles[0], self.tiles[layer_index - 1]),
                 _ => (self.tiles[layer_index + 1], self.tiles[layer_index - 1]),
             };
 
@@ -243,7 +243,7 @@ pub struct ChunkLayers {
 }
 
 /// The Coordinates of a chunk
-#[derive(Component, Deref, Default, Clone, Copy)]
+#[derive(Component, Deref, Default, Clone, Copy, Reflect)]
 pub struct ChunkCord(pub UVec3);
 
 #[derive(Bundle, Default)]

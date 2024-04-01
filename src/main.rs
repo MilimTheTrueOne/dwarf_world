@@ -1,5 +1,5 @@
 use bevy::{prelude::*, window::PresentMode};
-use bevy_inspector_egui::quick::ResourceInspectorPlugin;
+use bevy_inspector_egui::quick::{ResourceInspectorPlugin, WorldInspectorPlugin};
 use prelude::LoadingState;
 use smooth_bevy_cameras::{
     controllers::fps::{FpsCameraBundle, FpsCameraController, FpsCameraPlugin},
@@ -39,7 +39,8 @@ fn main() {
         app.add_plugins(LogDiagnosticsPlugin::default());
         use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
         app.add_plugins(FrameTimeDiagnosticsPlugin);
-        app.add_plugins(ResourceInspectorPlugin::<Msaa>::new())
+        app.add_plugins(WorldInspectorPlugin::new())
+            .register_type::<dwarf_map::chunk::ChunkCord>()
     };
     app.run();
 }
