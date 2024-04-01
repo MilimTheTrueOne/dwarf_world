@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_inspector_egui::quick::ResourceInspectorPlugin;
 
-use self::chunk::{ChunkBundle, ChunkData};
+use self::chunk::{ChunkBundle, ChunkCache, ChunkCord, ChunkData, CHUNK_SIZE};
 
 pub mod chunk;
 pub mod tile_atlas;
@@ -19,11 +19,28 @@ impl Plugin for DwarfMapPlugin {
     }
 }
 
-pub fn spawn_chunk(mut commands: Commands) {
-    commands.spawn(ChunkBundle {
-        chunk: ChunkData::random(),
-        ..Default::default()
-    });
+pub fn spawn_chunk(mut commands: Commands, mut cache: ResMut<ChunkCache>) {
+    for x in 0..10 {
+        for y in 0..10 {
+            for z in 0..1 {
+                let cord = ChunkCord(UVec3::new(x, y, z));
+                let e = commands
+                    .spawn(ChunkBundle {
+                        chunk: ChunkData::random(),
+                        transform: Transform::from_xyz(
+                            (x as usize * CHUNK_SIZE) as f32,
+                            (y as usize * CHUNK_SIZE) as f32,
+                            (z as usize * CHUNK_SIZE) as f32,
+                        ),
+                        cord,
+                        ..default()
+                    })
+                    .id();
+
+                cache.insert(cord.0, e);
+            }
+        }
+    }
 }
 
 #[derive(Debug, Resource, Reflect, Deref, DerefMut)]

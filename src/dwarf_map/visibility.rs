@@ -19,11 +19,14 @@ fn set_floor_visibility(
     y: Res<CurrentMapLayer>,
     mut walls: Query<(&WallFloorMesh, &mut Visibility)>,
 ) {
+    let y_changed = y.is_changed();
     for (wall, mut vis) in walls.iter_mut() {
-        *vis = match wall.0 <= y.0 {
-            true => Visibility::Visible,
-            false => Visibility::Hidden,
-        };
+        if vis.is_added() || y_changed {
+            *vis = match wall.0 <= y.0 {
+                true => Visibility::Visible,
+                false => Visibility::Hidden,
+            };
+        }
     }
 }
 
@@ -31,10 +34,13 @@ fn set_ceiling_visibility(
     y: Res<CurrentMapLayer>,
     mut ceilings: Query<(&CeilingMesh, &mut Visibility)>,
 ) {
+    let y_changed = y.is_changed();
     for (ceiling, mut vis) in ceilings.iter_mut() {
-        *vis = match ceiling.0 == y.0 {
-            true => Visibility::Visible,
-            false => Visibility::Hidden,
-        };
+        if vis.is_added() || y_changed {
+            *vis = match ceiling.0 == y.0 {
+                true => Visibility::Visible,
+                false => Visibility::Hidden,
+            };
+        }
     }
 }

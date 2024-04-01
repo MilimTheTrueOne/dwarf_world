@@ -2,12 +2,6 @@ use super::temp_mesh::TempMesh;
 
 use super::*;
 
-const MAX: u32 = CHUNK_SIZE as u32 - 1;
-
-pub trait MeshLayer {
-    fn get_tile(&self, pos: UVec2) -> TileVisibility;
-}
-
 #[derive(Debug, Clone, Copy, Default, Reflect)]
 pub enum TileVisibility {
     #[default]
@@ -27,60 +21,14 @@ impl TileVisibility {
 }
 use TileVisibility::*;
 
-impl MeshLayer for [[Tile; CHUNK_SIZE]; CHUNK_SIZE] {
-    fn get_tile(&self, pos: UVec2) -> TileVisibility {
-        self[pos.x as usize][pos.y as usize].visibility
-    }
-}
-
-pub struct EmptyLayer;
-
-impl MeshLayer for EmptyLayer {
-    fn get_tile(&self, _: UVec2) -> TileVisibility {
-        TileVisibility::Empty
-    }
-}
-
 /// turn any type that implements [`MeshLayer`] into a mesh, given the layer above and below it
 /// return the FloorWallMesh and the CeilingMesh
 pub fn generate_mesh(
     layer: &[[Tile; CHUNK_SIZE]; CHUNK_SIZE],
-    above: &impl MeshLayer,
-    below: &impl MeshLayer,
+    get_vis: impl Fn(UVec2, usize) -> [TileVisibility; 6],
+    layer_index: usize,
     atlas: &Res<crate::dwarf_map::tile_atlas::TileAtlas>,
 ) -> (Mesh, Mesh) {
-    let get_neighbors = |pos: UVec2| {
-        let x = pos.x;
-        let y = pos.y;
-
-        let (left, right) = match x {
-            0 => (Empty, layer.get_tile(UVec2::new(x + 1, y))),
-            MAX => (layer.get_tile(UVec2::new(x - 1, y)), Empty),
-            _ => (
-                layer.get_tile(UVec2::new(x - 1, y)),
-                layer.get_tile(UVec2::new(x + 1, y)),
-            ),
-        };
-
-        let (front, back) = match y {
-            0 => (Empty, layer.get_tile(UVec2::new(x, y + 1))),
-            MAX => (layer.get_tile(UVec2::new(x, y - 1)), Empty),
-            _ => (
-                layer.get_tile(UVec2::new(x, y - 1)),
-                layer.get_tile(UVec2::new(x, y + 1)),
-            ),
-        };
-
-        [
-            above.get_tile(pos),
-            below.get_tile(pos),
-            right,
-            left,
-            front,
-            back,
-        ]
-    };
-
     let mut floor_wall_mesh = TempMesh::new();
     let mut ceiling_mesh = TempMesh::new();
 
@@ -89,7 +37,7 @@ pub fn generate_mesh(
             let vis = layer[x as usize][z as usize].visibility;
             let index = layer[x as usize][z as usize].index;
 
-            let neighbors = get_neighbors(UVec2::new(x, z));
+            let neighbors = get_vis(UVec2::new(x, z), layer_index);
 
             let offset = Vec3::new(x as f32, 0.0, z as f32);
 

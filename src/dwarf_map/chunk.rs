@@ -20,7 +20,7 @@ pub struct Tile {
 impl Distribution<Tile> for Standard {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Tile {
         let visibility = match rng.gen_range(0..2) {
-            0 => TileVisibility::Empty,
+            0 => TileVisibility::Solid,
             1 => TileVisibility::Solid,
             _ => unreachable!(),
         };
@@ -47,8 +47,10 @@ pub fn update_chunk_meshes(
     chunks: Query<(Entity, &ChunkData, &ChunkCord, Option<&ChunkLayers>), Changed<ChunkData>>,
     mut mesh_assets: ResMut<Assets<Mesh>>,
     atlas: Res<super::tile_atlas::TileAtlas>,
+    cache: Res<ChunkCache>,
 ) {
     let material = atlas.material.clone();
+    let dummy = ChunkData::default();
 
     for (c, chunk, cord, old_layers) in chunks.iter() {
         if let Some(layer) = old_layers {
@@ -57,27 +59,20 @@ pub fn update_chunk_meshes(
             }
         };
 
-        let mut meshes = vec![];
+        let mut meshes: Vec<(Mesh, Mesh)> = vec![];
 
-        meshes.push(meshing::generate_mesh(
-            &chunk.tiles[0],
-            &chunk.tiles[1],
-            &EmptyLayer,
+        let neigh = cache.get_neighbors(cord.0);
+
+        chunk.gen_meshes(
+            neigh[0].map_or(&dummy, |e| chunks.get(e).unwrap().1),
+            neigh[1].map_or(&dummy, |e| chunks.get(e).unwrap().1),
+            neigh[2].map_or(&dummy, |e| chunks.get(e).unwrap().1),
+            neigh[3].map_or(&dummy, |e| chunks.get(e).unwrap().1),
+            neigh[4].map_or(&dummy, |e| chunks.get(e).unwrap().1),
+            neigh[5].map_or(&dummy, |e| chunks.get(e).unwrap().1),
             &atlas,
-        ));
-
-        for layer in chunk.tiles.windows(3) {
-            meshes.push(meshing::generate_mesh(
-                &layer[1], &layer[2], &layer[0], &atlas,
-            ))
-        }
-
-        meshes.push(meshing::generate_mesh(
-            &chunk.tiles[CHUNK_SIZE - 1],
-            &EmptyLayer,
-            &chunk.tiles[CHUNK_SIZE - 2],
-            &atlas,
-        ));
+            &mut meshes,
+        );
 
         let mut layers = ChunkLayers {
             layers: [Entity::PLACEHOLDER; CHUNK_SIZE],
@@ -87,12 +82,13 @@ pub fn update_chunk_meshes(
 
         for (layer, (floor_wall, ceiling)) in layers.layers.iter_mut().zip(meshes) {
             let entity = commands
-                .spawn(Layer)
+                .spawn(ChunkLayer)
                 .insert(SpatialBundle::from_transform(Transform::from_xyz(
-                    cord.x as f32,
-                    (cord.y as usize + current) as f32,
-                    cord.z as f32,
+                    0.0,
+                    (current - cord.y as usize * CHUNK_SIZE) as f32 - 8.0,
+                    0.0,
                 )))
+                .set_parent(c)
                 .id();
             *layer = entity;
 
@@ -122,19 +118,101 @@ pub fn update_chunk_meshes(
 }
 
 #[derive(Resource, Default)]
-struct ChunkCache {
+pub struct ChunkCache {
     map: HashMap<UVec3, Entity>,
 }
 
 impl ChunkCache {
-    fn get(&self, pos: &UVec3) -> Option<&Entity> {
-        self.map.get(pos)
+    pub fn get(&self, pos: &UVec3) -> Option<Entity> {
+        self.map.get(pos).copied()
+    }
+
+    pub fn insert(&mut self, pos: UVec3, e: Entity) {
+        self.map.insert(pos, e);
+    }
+
+    fn get_neighbors(&self, pos: UVec3) -> [Option<Entity>; 6] {
+        [
+            self.get(&pos.wrapping_add(UVec3::X)),
+            self.get(&pos.wrapping_sub(UVec3::X)),
+            self.get(&pos.wrapping_add(UVec3::Z)),
+            self.get(&pos.wrapping_sub(UVec3::Z)),
+            self.get(&pos.wrapping_add(UVec3::Y)),
+            self.get(&pos.wrapping_sub(UVec3::Y)),
+        ]
     }
 }
 
 #[derive(Component, Default, Debug, Clone)]
 pub struct ChunkData {
     tiles: [[[Tile; CHUNK_SIZE]; CHUNK_SIZE]; CHUNK_SIZE],
+}
+
+const MAX: usize = CHUNK_SIZE - 1;
+
+impl ChunkData {
+    #[allow(clippy::too_many_arguments)]
+    pub fn gen_meshes(
+        &self,
+        chunk_right: &ChunkData,
+        chunk_left: &ChunkData,
+        chunk_front: &ChunkData,
+        chunk_back: &ChunkData,
+        chunk_top: &ChunkData,
+        chunk_bottom: &ChunkData,
+        atlas: &Res<super::tile_atlas::TileAtlas>,
+        meshes: &mut Vec<(Mesh, Mesh)>,
+    ) {
+        let get_vis = |pos: UVec2, layer_index: usize| -> [TileVisibility; 6] {
+            let x = pos.x as usize;
+            let y = pos.y as usize;
+
+            let layer = self.tiles[layer_index];
+
+            let (left, right) = match x {
+                0 => (
+                    chunk_left.tiles[layer_index][y][MAX].visibility,
+                    layer[x + 1][y].visibility,
+                ),
+                MAX => (
+                    layer[x - 1][y].visibility,
+                    chunk_right.tiles[layer_index][y][0].visibility,
+                ),
+                _ => (layer[x - 1][y].visibility, layer[x + 1][y].visibility),
+            };
+
+            let (front, back) = match y {
+                0 => (
+                    chunk_front.tiles[layer_index][x][MAX].visibility,
+                    layer[x][y + 1].visibility,
+                ),
+                MAX => (
+                    layer[x][y - 1].visibility,
+                    chunk_back.tiles[layer_index][x][0].visibility,
+                ),
+                _ => (layer[x][y - 1].visibility, layer[x][y + 1].visibility),
+            };
+
+            let (above, below) = match layer_index {
+                0 => (self.tiles[layer_index + 1], chunk_bottom.tiles[MAX]),
+                MAX => (self.tiles[layer_index - 1], chunk_top.tiles[0]),
+                _ => (self.tiles[layer_index + 1], self.tiles[layer_index - 1]),
+            };
+
+            [
+                above[x][y].visibility,
+                below[x][y].visibility,
+                right,
+                left,
+                front,
+                back,
+            ]
+        };
+
+        for (i, layer) in self.tiles.iter().enumerate() {
+            meshes.push(meshing::generate_mesh(layer, get_vis, i, atlas));
+        }
+    }
 }
 
 #[allow(unused)]
@@ -165,8 +243,8 @@ pub struct ChunkLayers {
 }
 
 /// The Coordinates of a chunk
-#[derive(Component, Deref, Default)]
-pub struct ChunkCord(UVec3);
+#[derive(Component, Deref, Default, Clone, Copy)]
+pub struct ChunkCord(pub UVec3);
 
 #[derive(Bundle, Default)]
 pub struct ChunkBundle {
@@ -180,7 +258,7 @@ pub struct ChunkBundle {
 }
 
 #[derive(Debug, Component)]
-pub struct Layer;
+pub struct ChunkLayer;
 
 #[allow(unused)]
 impl ChunkBundle {
@@ -210,7 +288,7 @@ impl<'w, 's> MapCommands<'w, 's> {
     /// gets a tile from the world, return panics if the tile is out of bounds.
     pub fn get_tile<'a>(&'a mut self, pos: UVec3) -> TileCommands<'w, 's, 'a> {
         let chunk_pos = pos / UVec3::splat(CHUNK_SIZE as u32);
-        let chunk = *self
+        let chunk = self
             .cache
             .get(&chunk_pos)
             .expect("Out of bound tile access");
